@@ -24,50 +24,36 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
-    ImageButton start,stop,reset;
+    private ImageButton start,stop,reset;
 
-    float steps;
-    int count = 0;
-
-    private SoundPool soundPool;
     private TextView mStepCounterText;
     private SensorManager mSensorManager;
     private Sensor  mStepCounterSensor;
 
-    SensorEvent se;
-
-    private int soundId;
+    private SoundPool soundPool;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //ジャイロセンサー起動　歩数計測スタート
         start = (ImageButton) findViewById(R.id.imageButton4);
         start.setOnClickListener(this);
-        //ジャイロセンサー起動　歩数計測スタート
 
+        //ジャイロセンサー停止　歩数計測ストップ
         stop = (ImageButton) findViewById(R.id.imageButton5);
         stop.setOnClickListener(this);
-        //ジャイロセンサー停止　歩数計測ストップ
 
+        //ジャイロセンサー取得数値消去
         reset = (ImageButton) findViewById(R.id.imageButton6);
         reset.setOnClickListener(this);
-        //ジャイロセンサー取得数値消去
 
         mStepCounterText = (TextView) findViewById(R.id.pedometer);
-        steps = 0;
-
-
-
 
     }
     protected void onResume() {
         super.onResume();
-        // 予め音声データを読み込む
-        soundPool = new SoundPool(50, AudioManager.STREAM_MUSIC, 0);
-        soundId = soundPool.load(getApplicationContext(), R.raw.clicksound1, 1);
-
 
         //KITKAT以上かつTYPE_STEP_COUNTERが有効ならtrue
         boolean isTarget = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
@@ -85,6 +71,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Log.d("hasStepCounter", "STEP-COUNTER is NOT available.");
             mStepCounterText.setText("STEP-COUNTER is NOT available.");
         }
+
+        // 予め音声データを読み込む
+        soundPool = new SoundPool(50, AudioManager.STREAM_MUSIC, 0);
+        soundId = soundPool.load(getApplicationContext(), R.raw.clicksound1, 1);
 
     }
 
@@ -109,36 +99,76 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    float first = 0;
+    private SensorEvent se;
+    private int soundId;
+
+    //スタート・ストップ・リセットの状態
+    boolean startflag = false;
     boolean stopflag = false;
-    float stopfirst = 0;
+    boolean resetflag = false;
+
+    //現在の歩数
+    private float steps = 0;
+
+    //起動時を表す（1度だけ使用）
+    int first = 0;
+
+    //アプリ起動以前に記録された歩数、および不必要歩数の総和
+    float dust = 0;
+    //ストップが押された時の[センサの値]
+    float stopdust = 0;
+    //ストップが押されている間の歩数（不必要歩数）
+    //(スタートが押された瞬間の[センサの値]) - stopdust で求める
     float stopsteps = 0;
 
 
 
     private final SensorEventListener mStepCountListener = new SensorEventListener() {
+
+        //センサーから歩数を取得し、表示するメソッド
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
 
             se = sensorEvent;
 
             //センサーから取得した値をテキストビューに表示する
-            if(count == 0){
-                first = se.values[0];
-                steps = se.values[0] - first;
+
+            //アプリ起動直後の処理
+            //[0歩]もしくは、[前回の累積歩数]を表示
+            if(first == 0) {
+                //必要ないセンサの累積歩数を入れる
+                dust = se.values[0];
+                //最初に表示したい歩数の計算
+                steps = se.values[0] - dust;
+                //歩数の表示
                 mStepCounterText.setText(String.format(Locale.US, "%f", steps));
-                count++;
-            }else {
-                if(!stopflag) {
 
-                    //wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-                    steps = se.values[0] - first;
-                    mStepCounterText.setText(String.format(Locale.US, "%f", steps));
-                    //wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+                //状態の初期化
+                startflag = false;
+                stopflag = true;
+                resetflag = false;
 
-                }else {
+                //（起動時なので）ストップボタンを押している状態にする
+                stopdust = se.values[0];
 
-                }
+                //初回起動時の処理のため、以降このif文に入らないようにする
+                first++;
+            }
+            //スタートボタンが押されている時
+            else if(startflag) {
+
+                //歩数表示を増加させる
+                //wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+                steps = se.values[0] - dust;
+                mStepCounterText.setText(String.format(Locale.US, "%f", steps));
+                //wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+
+            }
+            //ストップボタンが押されている時
+            else if(stopflag) {
+
+                //歩数表示は変化させず維持する（ストップが押される直前の歩数を表示し続けるだけ）
+
             }
         }
 
@@ -148,103 +178,125 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     };
 
-
-    //連続で同じボタンを押された場合の処理に使う変数
-    int startB;
-    int stopB = 1;
-
-
     ImageButton teststart;
 
     @Override
     public void onClick(View v) {
-
         switch (v.getId()){
-            case R.id.imageButton4:
 
-                //画像を変更する
-                //ストップが押されたときに押せる
-                if(startB == 0) {
+            //スタートボタン
+            case R.id.imageButton4:
+                //ストップが押されたとき（かつリセットは押されてない）に押せる
+                if(stopflag && !resetflag) {
+                    //ボタンの音
                     soundPool.play(soundId, 1f, 1f, 0, 0, 1);    //音の大きさは0fから1fで調整できる
-                    teststart = (ImageButton) findViewById(R.id.imageButton4);
-                    teststart.setImageResource(R.drawable.start2);
                     //Toast.makeText(this, "スタート！", Toast.LENGTH_SHORT).show();
 
+                    //スタート・ストップボタンの画像変更
+                    teststart = (ImageButton) findViewById(R.id.imageButton4);
+                    teststart.setImageResource(R.drawable.start2);
                     teststart = (ImageButton) findViewById(R.id.imageButton5);
                     teststart.setImageResource(R.drawable.stop);
 
-                    startB = 1;
-                    stopB = 0;
-
-                    //
+                    //状態変更
+                    startflag = true;
                     stopflag = false;
-                    stopsteps = se.values[0] - stopfirst;
+                    resetflag = false;
 
-                    Log.d("testt", "firstの値：" + first);
-                    Log.d("testt", "センサの値：" + se.values[0]);
-                    Log.d("testt", "stopfirstの値：" + stopfirst);
+                    Log.d("testt", "dustの値：" + dust);
 
+                    //歩数計算
+                    stopsteps = se.values[0] - stopdust;
+                    dust += stopsteps;
 
+                    Log.d("testt", stopsteps + " = " + se.values[0] + " - " + stopdust);
+
+                    Log.d("testt", "変化後のdustの値：" + dust);
+                    Log.d("testt", "変化後のdustの値：" + dust);
+                    Log.d("testt", "歩数の値：" + steps);
 
                 }
+                /*
                 //リセットが押されたときに押せる
-                if (stopB == 0) {
-                    teststart = (ImageButton) findViewById(R.id.imageButton6);
-                    teststart.setImageResource(R.drawable.reset2);
+                if (stopflag && resetflag) {
+                    //ボタンの音
+                    soundPool.play(soundId, 1f, 1f, 0, 0, 1);    //音の大きさは0fから1fで調整できる
+                    //Toast.makeText(this, "スタート！", Toast.LENGTH_SHORT).show();
+
+                    //スタート・ストップボタンの画像変更
+                    teststart = (ImageButton) findViewById(R.id.imageButton4);
+                    teststart.setImageResource(R.drawable.start2);
+                    teststart = (ImageButton) findViewById(R.id.imageButton5);
+                    teststart.setImageResource(R.drawable.stop);
+
+                    //状態変更
+                    startflag = true;
+                    stopflag = false;
+                    resetflag = false;
+
+                    Log.d("testt", "dustの値：" + dust);
+
+                    //歩数計算
+                    stopsteps = se.values[0] - stopdust;
+                    dust += stopsteps;
+
+                    Log.d("testt", stopsteps + " = " + se.values[0] + " - " + stopdust);
+
+                    Log.d("testt", "変化後のdustの値：" + dust);
+                    Log.d("testt", "変化後のdustの値：" + dust);
+                    Log.d("testt", "歩数の値：" + steps);
                 }
-
-
-
-
+                */
                 break;
 
+            //ストップボタン
             case R.id.imageButton5:
-                //画像を変更する
-                if(stopB == 0) {
+                if(startflag) {
+                    //ボタンの音
                     soundPool.play(soundId, 1f, 1f, 0, 0, 1);    //音の大きさは0fから1fで調整できる
+                    //Toast.makeText(this, "ストップ！", Toast.LENGTH_SHORT).show();
+
+                    //スタート・ストップ・リセットボタンの画像変更
                     teststart = (ImageButton) findViewById(R.id.imageButton4);
                     teststart.setImageResource(R.drawable.start);
                     teststart = (ImageButton) findViewById(R.id.imageButton5);
                     teststart.setImageResource(R.drawable.stop2);
                     teststart = (ImageButton) findViewById(R.id.imageButton6);
                     teststart.setImageResource(R.drawable.reset);
-                    //Toast.makeText(this, "ストップ！", Toast.LENGTH_SHORT).show();
 
-                    startB = 0;
-                    stopB = 1;
-
-                    //
+                    //状態変更
+                    startflag = false;
                     stopflag = true;
-                    stopfirst = se.values[0];
+                    resetflag = true;
 
-
-
-                }else{
+                    //歩数計算
+                    stopdust = se.values[0];
 
                 }
                 break;
 
+            //リセットボタン
             case R.id.imageButton6:
-                //画像を変更する
-                if(stopB == 1) {
+                if(resetflag) {
+                    //ボタンの音
                     soundPool.play(soundId, 1f, 1f, 0, 0, 1);    //音の大きさは0fから1fで調整できる
-                    teststart = (ImageButton) findViewById(R.id.imageButton6);
-                    teststart.setImageResource(R.drawable.reset2);
-                    teststart = (ImageButton) findViewById(R.id.imageButton4);
-                    teststart.setImageResource(R.drawable.start);
                     //Toast.makeText(this, "リセット！", Toast.LENGTH_SHORT).show();
 
-                    first = se.values[0];
-                    stopsteps = 0;
-                    stopfirst = 0;
-                    steps = se.values[0] - first;
+                    //スタート・リセットボタンの画像変更
+                    teststart = (ImageButton) findViewById(R.id.imageButton4);
+                    teststart.setImageResource(R.drawable.start);
+                    teststart = (ImageButton) findViewById(R.id.imageButton6);
+                    teststart.setImageResource(R.drawable.reset2);
+
+                    //状態変更
+                    startflag = false;
+                    stopflag = true;
+                    resetflag = false;
+
+                    //歩数計算
+                    dust = se.values[0];
+                    steps = se.values[0] - dust;
                     mStepCounterText.setText(String.format(Locale.US, "%f", steps));
-
-
-
-                    startB = 0;
-                    stopB = 1;
-                }else{
 
                 }
                 break;

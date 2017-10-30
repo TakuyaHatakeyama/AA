@@ -43,7 +43,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#00000000"
-        app:srcCompat="@drawable/reset2"
+        app:srcCompat="@drawable/reset"
         android:layout_alignTop="@+id/imageButton5"
         android:layout_alignStart="@+id/textView2" />
 
