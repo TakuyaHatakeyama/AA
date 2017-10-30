@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.tenma.wolkapp.MainActivity">
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="歩"
+        android:textSize="50dp"
+        tools:layout_editor_absoluteX="113dp"
+        tools:layout_editor_absoluteY="79dp"
+        android:layout_marginStart="33dp"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@+id/imageButton5" />
+
+    <ImageButton
+        android:id="@+id/imageButton4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="43dp"
+        android:background="#00000000"
+        app:srcCompat="@drawable/start"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="12dp" />
+
+    <ImageButton
+        android:id="@+id/imageButton5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#00000000"
+        app:srcCompat="@drawable/stop2"
+        android:layout_alignTop="@+id/imageButton4"
+        android:layout_centerHorizontal="true" />
+
+    <ImageButton
+        android:id="@+id/imageButton6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#00000000"
+        app:srcCompat="@drawable/reset2"
+        android:layout_alignTop="@+id/imageButton5"
+        android:layout_alignStart="@+id/textView2" />
+
+    <ImageView
+        android:id="@+id/imageView8"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="76dp"
+        app:srcCompat="@drawable/apptitlepng" />
+
+    <TextView
+        android:id="@+id/pedometer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@+id/imageButton4"
+        android:text="TextView" />
+
+
+</RelativeLayout>
